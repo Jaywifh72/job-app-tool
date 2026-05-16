@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job App Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="accent-bar"></div>
+
+<div class="header">
+  <div class="header-inner">
+    <a href="{{ url_for('index') }}" class="header-left">
+      <div class="header-logo">
+        <svg viewBox="0 0 34 34" width="34" height="34" fill="none">
+          <defs>
+            <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#d4a050"/>
+              <stop offset="100%" stop-color="#e8c088"/>
+            </linearGradient>
+          </defs>
+          <path d="M17 3l14 14-14 14L3 17 17 3z" fill="url(#lg)"/>
+          <text x="17" y="21.5" text-anchor="middle" fill="#0c0c0d" font-family="Inter" font-weight="800" font-size="14" letter-spacing="-0.4">JT</text>
+        </svg>
+      </div>
+      <h1>Job App Tool</h1>
+    </a>
+    <span class="header-badge">OpenAI gpt-5.5</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <div id="form-area">
+    <div class="card fade-in">
+      <div class="card-header">
+        <span class="step-num">1</span>
+        <h2>Job Posting</h2>
+      </div>
+      <div class="form-group">
+        <label for="url">Job posting URL</label>
+        <input type="url" id="url" name="url" placeholder="https://linkedin.com/jobs/view/..." autocomplete="url">
+        <div class="hint">The description will be scraped automatically.</div>
+      </div>
+      <div class="or-divider">or paste manually</div>
+      <div class="form-group">
+        <label for="job_text">Job description</label>
+        <textarea id="job_text" name="job_text" placeholder="Paste the full job description here..."></textarea>
+      </div>
+    </div>
+
+    <div class="card fade-in-d1">
+      <div class="card-header">
+        <span class="step-num">2</span>
+        <h2>Your Resume</h2>
+      </div>
+      <div class="form-group">
+        <div class="file-upload" id="file-upload-area">
+          <input type="file" id="resume" name="resume" accept=".docx">
+          <div class="file-upload-icon">&#128196;</div>
+          <div class="file-upload-text">
+            <div class="file-label" id="file-label-text">
+              <strong>Upload resume</strong> &mdash; .docx
+            </div>
+            <div class="file-name" id="file-name-text">Default: Jean-Jacques_Boileau_Resume-2026.docx</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card fade-in-d2">
+      <div class="card-header">
+        <span class="step-num">3</span>
+        <h2>Customize &mdash; optional</h2>
+      </div>
+      <div class="form-group">
+        <label for="instructions">Extra instructions for the AI</label>
+        <textarea id="instructions" name="instructions" placeholder='e.g. "Emphasize my AI/automation experience more"' rows="2"></textarea>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-block fade-in-d3" id="submit-btn" onclick="startGeneration()">
+      Generate Tailored Resume & Cover Letter
+    </button>
+  </div>
+
+  <div class="progress-area" id="progress-area" style="display:none;">
+    <div class="card fade-in">
+      <div class="card-header">
+        <span class="step-num success">&#10003;</span>
+        <h2>Processing Your Application</h2>
+      </div>
+      <div class="card-subtitle">The AI is analyzing the posting and tailoring your materials. This takes about 1&ndash;2 minutes.</div>
+      <div class="timeline" id="timeline"></div>
+      <div class="status-bar" id="status-bar">
+        <div class="mini-spinner"></div>
+        <span class="status-text" id="current-status">Starting...</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="results-area" id="results-area"></div>
+  <div id="error-area" style="display:none;"></div>
+
+</div>
+
+<div class="footer">Job App Tool</div>
+
+<script>
+let currentJobId = null;
+let pollInterval = null;
+
+document.getElementById("resume").addEventListener("change", function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    document.getElementById("file-label-text").innerHTML = "<strong>" + file.name + "</strong>";
+    document.getElementById("file-name-text").textContent = (file.size / 1024).toFixed(0) + " KB selected";
+  }
+});
+
+function validateForm() {
+  const url = document.getElementById("url").value.trim();
+  const jobText = document.getElementById("job_text").value.trim();
+  if (!url && !jobText) {
+    alert("Please provide a job posting URL or paste the job description.");
+    return false;
+  }
+  return true;
+}
+
+function renderTimeline(steps) {
+  const container = document.getElementById("timeline");
+  container.innerHTML = "";
+  if (!steps || steps.length === 0) {
+    container.innerHTML = '<div style="padding:10px 0;color:var(--text-tertiary);font-size:13px;">Waiting for updates...</div>';
+    return;
+  }
+  steps.forEach((step, i) => {
+    const div = document.createElement("div");
+    div.className = "timeline-step " + step.status;
+    const row = document.createElement("div");
+    row.style.display = "flex";
+    row.style.alignItems = "flex-start";
+    row.style.gap = "12px";
+    const icon = document.createElement("div");
+    icon.className = "timeline-icon";
+    if (step.status === "done") icon.textContent = "\u2713";
+    else if (step.status === "active") icon.textContent = "\u25CF";
+    else icon.innerHTML = "&nbsp;";
+    row.appendChild(icon);
+    const textWrap = document.createElement("div");
+    const text = document.createElement("div");
+    text.className = "step-text";
+    text.textContent = step.text || step.label || step.name || "";
+    textWrap.appendChild(text);
+    if (step.status === "active") {
+      const dots = document.createElement("div");
+      dots.style.cssText = "font-size:11.5px;color:var(--accent);margin-top:2px;font-weight:500;";
+      dots.textContent = "In progress...";
+      textWrap.appendChild(dots);
+    }
+    row.appendChild(textWrap);
+    div.appendChild(row);
+    if (i < steps.length - 1) {
+      const connector = document.createElement("div");
+      connector.className = "timeline-connector";
+      div.appendChild(connector);
+    }
+    container.appendChild(div);
+  });
+}
+
+async function startGeneration() {
+  if (!validateForm()) return;
+  const submitBtn = document.getElementById("submit-btn");
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Starting...";
+  const formData = new FormData();
+  formData.append("url", document.getElementById("url").value.trim());
+  formData.append("job_text", document.getElementById("job_text").value.trim());
+  formData.append("instructions", document.getElementById("instructions").value.trim());
+  const resumeFile = document.getElementById("resume").files[0];
+  if (resumeFile) formData.append("resume", resumeFile);
+  document.getElementById("form-area").style.display = "none";
+  document.getElementById("progress-area").style.display = "block";
+  try {
+    const response = await fetch("{{ url_for('generate') }}", { method: "POST", body: formData });
+    const data = await response.json();
+    if (data.error) { showError(data.error); return; }
+    currentJobId = data.job_id;
+    startPolling(currentJobId);
+  } catch (err) { showError("Network error: " + err.message); }
+}
+
+function startPolling(jobId) {
+  pollInterval = setInterval(async () => {
+    try {
+      const response = await fetch("{{ url_for('status', job_id='JOB_ID') }}".replace("JOB_ID", jobId));
+      const data = await response.json();
+      if (data.error) { showError(data.error); return; }
+      if (data.steps) renderTimeline(data.steps);
+      document.getElementById("current-status").textContent = data.current_step || data.progress || "Processing...";
+      if (data.status === "done") {
+        clearInterval(pollInterval);
+        await fetchSummary(jobId);
+      } else if (data.status === "error") {
+        clearInterval(pollInterval);
+        showError(data.error || "An unknown error occurred.");
+      }
+    } catch (err) {}
+  }, 1500);
+}
+
+async function fetchSummary(jobId) {
+  document.getElementById("current-status").textContent = "Complete!";
+  document.querySelector(".status-bar .mini-spinner").style.display = "none";
+  window.location.href = "{{ url_for('results', job_id='JOB_ID') }}".replace("JOB_ID", jobId);
+}
+
+function showError(message) {
+  clearInterval(pollInterval);
+  document.getElementById("progress-area").style.display = "none";
+  document.getElementById("form-area").style.display = "block";
+  const errorArea = document.getElementById("error-area");
+  errorArea.style.display = "block";
+  errorArea.innerHTML = '<div class="card fade-in"><div class="error-box">' + message + '</div></div>';
+  const submitBtn = document.getElementById("submit-btn");
+  submitBtn.disabled = false;
+  submitBtn.textContent = "Generate Tailored Resume & Cover Letter";
+}
+</script>
+
+</body>
+</html>

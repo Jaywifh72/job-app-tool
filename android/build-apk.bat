@@ -1,0 +1,6 @@
+@echo off
+echo Downloading Gradle Wrapper...
+powershell -Command "& { Invoke-WebRequest -Uri 'https://github.com/gradle/gradle/raw/v8.9.0/gradle/wrapper/gradle-wrapper.jar' -OutFile 'gradle\wrapper\gradle-wrapper.jar' }"
+echo Building APK...
+call gradlew.bat assembleRelease --no-daemon
+pause

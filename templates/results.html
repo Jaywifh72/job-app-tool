@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Results — Job App Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="accent-bar"></div>
+
+<div class="header">
+  <div class="header-inner">
+    <a href="{{ url_for('index') }}" class="header-left">
+      <div class="header-logo">
+        <svg viewBox="0 0 34 34" width="34" height="34" fill="none">
+          <defs>
+            <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#d4a050"/>
+              <stop offset="100%" stop-color="#e8c088"/>
+            </linearGradient>
+          </defs>
+          <path d="M17 3l14 14-14 14L3 17 17 3z" fill="url(#lg)"/>
+          <text x="17" y="21.5" text-anchor="middle" fill="#0c0c0d" font-family="Inter" font-weight="800" font-size="14" letter-spacing="-0.4">JT</text>
+        </svg>
+      </div>
+      <h1>Job App Tool</h1>
+    </a>
+    {% if status == "done" %}
+    <span class="header-badge">Complete</span>
+    {% elif status == "error" %}
+    <span class="header-badge">Error</span>
+    {% else %}
+    <span class="header-badge">Processing</span>
+    {% endif %}
+  </div>
+</div>
+
+<div class="container">
+
+  {% if status == "error" %}
+    <div class="card fade-in">
+      <div class="error-box">{{ error or "An unknown error occurred." }}</div>
+      <a href="{{ url_for('index') }}" class="btn btn-primary">Try Again</a>
+    </div>
+
+  {% elif status == "done" %}
+
+    {% if summary %}
+    <div class="summary-block fade-in">
+      <h3>&#9654; Analysis Summary</h3>
+      <div class="summary-text">{{ summary }}</div>
+    </div>
+    {% endif %}
+
+    {% if steps %}
+    <div class="card fade-in-d1">
+      <div class="card-header">
+        <span class="step-num success">&#10003;</span>
+        <h2>Processing Steps</h2>
+      </div>
+      <div class="timeline">
+        {% for step in steps %}
+        <div class="timeline-step done">
+          <div style="display:flex;align-items:flex-start;gap:12px;">
+            <div class="timeline-icon">&#10003;</div>
+            <div>
+              <div class="step-text">{{ step.text or step.label or step.name or "" }}</div>
+            </div>
+          </div>
+          {% if not loop.last %}
+          <div class="timeline-connector"></div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card fade-in-d2">
+      <div class="card-header">
+        <span class="step-num success">&#10003;</span>
+        <h2>Your Documents</h2>
+      </div>
+      <div class="card-subtitle">Review the changes, preview documents, and download below.</div>
+
+      <div class="result-tabs">
+        <button class="result-tab active" onclick="switchTab('resume')">Resume</button>
+        <button class="result-tab" onclick="switchTab('cover')">Cover Letter</button>
+        {% if diff_html %}
+        <button class="result-tab" onclick="switchTab('changes')">Changes</button>
+        {% endif %}
+      </div>
+
+      <div class="result-preview" id="preview">{{ resume_preview }}</div>
+
+      <div class="result-actions">
+        <a class="btn btn-success" href="{{ url_for('download', job_id=job_id, filename=resume_filename) }}" download>Download Resume (docx)</a>
+        <a class="btn btn-outline" href="{{ url_for('download', job_id=job_id, filename=cover_filename) }}" download>Download Cover Letter (docx)</a>
+        {% if resume_pdf_filename %}
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('download', job_id=job_id, filename=resume_pdf_filename) }}" download>Resume (PDF)</a>
+        {% endif %}
+        {% if cover_pdf_filename %}
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('download', job_id=job_id, filename=cover_pdf_filename) }}" download>Cover Letter (PDF)</a>
+        {% endif %}
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('index') }}" style="margin-left:auto;">&larr; New Application</a>
+      </div>
+    </div>
+
+    <script>
+      const RESUME_TEXT = {{ resume_preview | tojson }};
+      const COVER_TEXT = {{ cover_preview | tojson }};
+      const DIFF_HTML = {{ diff_html | tojson }};
+      let currentTab = 'resume';
+      function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.result-tab').forEach(t => t.classList.remove('active'));
+        const tabs = document.querySelectorAll('.result-tab');
+        for (let i = 0; i < tabs.length; i++) {
+          const t = tabs[i];
+          const txt = t.textContent.trim().toLowerCase();
+          if ((tab === 'resume' && txt === 'resume') ||
+              (tab === 'cover' && txt === 'cover letter') ||
+              (tab === 'changes' && txt === 'changes')) {
+            t.classList.add('active');
+            break;
+          }
+        }
+        const preview = document.getElementById('preview');
+        if (tab === 'changes') {
+          preview.innerHTML = DIFF_HTML;
+        } else {
+          preview.textContent = tab === 'resume' ? RESUME_TEXT : COVER_TEXT;
+        }
+      }
+    </script>
+
+  {% else %}
+
+    <div class="card fade-in" style="text-align:center; padding: 60px 20px;">
+      <div style="width:36px;height:36px;border:2.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 18px;"></div>
+      <div style="font-size:15px;font-weight:600;color:var(--text);">AI is working on your materials...</div>
+      <div id="step" style="margin-top:8px;font-size:13px;color:var(--text-tertiary);">Status: {{ status }}</div>
+      <p style="margin-top:20px;font-size:12.5px;color:var(--text-tertiary);">This page will refresh automatically. Typically takes 1–2 minutes.</p>
+      <a href="{{ url_for('index') }}" class="btn btn-ghost" style="margin-top:20px;">&larr; Start Over</a>
+    </div>
+
+    <script>
+      const JOB_ID = "{{ job_id }}";
+      const POLL_URL = "{{ url_for('status', job_id='JOB_ID') }}".replace('JOB_ID', JOB_ID);
+      async function poll() {
+        try {
+          const resp = await fetch(POLL_URL);
+          const data = await resp.json();
+          if (data.status === 'done' || data.status === 'error') { location.reload(); }
+          else {
+            document.getElementById('step').textContent = 'Status: ' + (data.current_step || data.progress || data.status);
+            setTimeout(poll, 2000);
+          }
+        } catch { setTimeout(poll, 2000); }
+      }
+      setTimeout(poll, 2000);
+    </script>
+  {% endif %}
+
+</div>
+
+<div class="footer">Job App Tool</div>
+
+</body>
+</html>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="accent">#D4A050</color>
+    <color name="accent_hover">#DDB06A</color>
+    <color name="bg">#0C0C0D</color>
+    <color name="surface">#161618</color>
+    <color name="text_primary">#EEEDEA</color>
+    <color name="text_secondary">#88847D</color>
+    <color name="status_bar">#0C0C0D</color>
+    <color name="splash_bg">#0C0C0D</color>
+</resources>
