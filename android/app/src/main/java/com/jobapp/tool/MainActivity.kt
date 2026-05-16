@@ -18,7 +18,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,7 +35,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -51,7 +49,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -60,12 +57,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.jobapp.tool.ui.theme.JobAppToolTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
@@ -86,14 +85,25 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppContent()
+                    MainScreen()
                 }
             }
         }
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun loadUrl(webView: WebView?, url: String) {
+        val normalized = if (url.startsWith("http://") || url.startsWith("https://")) url
+        else "http://$url"
+        webView?.loadUrl(normalized)
+    }
+
+    private fun runOnIoThread(action: () -> Unit) {
+        Thread(action).start()
+    }
+
     @Composable
-    private fun AppContent() {
+    private fun MainScreen() {
         var serverUrl by rememberSaveable { mutableStateOf("") }
         var showSettings by rememberSaveable { mutableStateOf(false) }
         var connected by remember { mutableStateOf(false) }
@@ -269,17 +279,6 @@ class MainActivity : ComponentActivity() {
             )
         }
     }
-
-    @SuppressLint("SetJavaScriptEnabled")
-    private fun loadUrl(webView: WebView?, url: String) {
-        val normalized = if (url.startsWith("http://") || url.startsWith("https://")) url
-        else "http://$url"
-        webView?.loadUrl(normalized)
-    }
-
-    private fun runOnIoThread(action: () -> Unit) {
-        Thread(action).start()
-    }
 }
 
 @Composable
@@ -308,7 +307,7 @@ private fun LoadingScreen(
                 text = "JT",
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onPrimary,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold
+                fontWeight = FontWeight.ExtraBold
             )
         }
 
