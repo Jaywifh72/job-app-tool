@@ -24,6 +24,15 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Generate debug keystore
+        run: |
+          mkdir -p ~/.android
+          keytool -genkey -v -keystore ~/.android/debug.keystore \
+            -storepass android -alias androiddebugkey -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+        shell: bash
+
       - name: Grant execute permission for gradlew
         run: chmod +x ./android/gradlew
         shell: bash
@@ -31,16 +40,6 @@ jobs:
       - name: Build APK
         run: ./gradlew assembleRelease --no-daemon
         working-directory: ./android
-        shell: bash
-
-      - name: Sign APK (debug key)
-        run: |
-          $ANDROID_HOME/build-tools/35.0.0/apksigner sign \
-            --ks android/app/debug.keystore \
-            --ks-pass pass:android \
-            --ks-key-alias androiddebugkey \
-            --key-pass pass:android \
-            android/app/build/outputs/apk/release/app-release-unsigned.apk 2>/dev/null || true
         shell: bash
 
       - name: Upload APK
