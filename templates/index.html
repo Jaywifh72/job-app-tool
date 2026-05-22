@@ -61,13 +61,13 @@
       </div>
       <div class="form-group">
         <div class="file-upload" id="file-upload-area">
-          <input type="file" id="resume" name="resume" accept=".docx">
+          <input type="file" id="resume" name="resume" accept=".docx"{% if not default_resume_exists %} required{% endif %}>
           <div class="file-upload-icon">&#128196;</div>
           <div class="file-upload-text">
             <div class="file-label" id="file-label-text">
-              <strong>Upload resume</strong> &mdash; .docx
+              <strong>Upload resume</strong> &mdash; .docx{% if not default_resume_exists %} (required){% endif %}
             </div>
-            <div class="file-name" id="file-name-text">Default: Jean-Jacques_Boileau_Resume-2026.docx</div>
+            <div class="file-name" id="file-name-text">{% if default_resume_exists %}Default: Jean-Jacques_Boileau_Resume-2026.docx{% else %}No file selected{% endif %}</div>
           </div>
         </div>
       </div>
