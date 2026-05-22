@@ -1,10 +1,13 @@
 # Job App Tool — Dependencies
 # Install with: pip install -r requirements.txt
 
-flask>=3.0.0                # Web framework
-python-docx>=1.2.0          # Read/write .docx resume files
-openai>=1.68.0              # OpenAI API
-requests>=2.32.0            # HTTP requests for scraping
-beautifulsoup4>=4.14.0      # HTML parsing
-playwright>=1.58.0          # JS-rendered page scraping (fallback)
-pywin32>=311                # Word COM automation (docx->PDF)
+flask>=3.0.0                            # Web framework
+python-docx>=1.2.0                      # Read/write .docx resume files
+openai>=1.68.0                          # OpenAI API
+requests>=2.32.0                        # HTTP requests for scraping
+beautifulsoup4>=4.14.0                  # HTML parsing
+gunicorn>=21.2.0                        # Production WSGI server (used by deploys)
+pywin32>=311; sys_platform == "win32"   # Windows-only: Word COM automation (docx->PDF)
+
+# Optional (not required for deploy): JS-rendered page scraping. Install locally if you
+# scrape job boards that require JS rendering: `pip install "playwright>=1.58.0" && playwright install chromium`
