@@ -2,6 +2,12 @@
 
 A Flask web app for tailoring resumes and generating cover letters with AI, plus an Android WebView client that wraps the same UI.
 
+## One-click deploy
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Jaywifh72/job-app-tool)
+
+Click the button, sign in with GitHub, paste your `OPENAI_API_KEY` when prompted, and Render hands you a public URL (`https://job-app-tool-xxxx.onrender.com`). Free tier; cold starts after 15 min idle.
+
 ## Components
 
 - **Flask backend** (`app.py`, `ai_handler.py`, `resume_handler.py`, `scraper.py`) — scrapes job postings, tailors resumes, generates cover letters, exports DOCX/PDF.
@@ -22,13 +28,13 @@ Then open http://127.0.0.1:5000.
 
 ## Using it remotely
 
-To use the tool away from your machine you need the Flask backend reachable from the internet, then point the Android app (or a browser) at that URL.
+Easiest: use the **Deploy to Render** button above. Render reads `render.yaml`, builds with `pip install -r requirements.txt`, and serves via `gunicorn`.
 
-Cheapest options:
+Other options:
 
-- **ngrok / cloudflared tunnel** — fastest. Run `python app.py` locally, then `cloudflared tunnel --url http://localhost:5000` and use the public URL it prints.
-- **Render / Railway / Fly.io** — deploy the Flask app directly from this repo. Set `OPENAI_API_KEY` as a secret. Use a managed worker or `gunicorn app:app` as the start command.
-- **Self-host VPS** — `gunicorn -w 2 -b 0.0.0.0:5000 app:app` behind nginx + TLS.
+- **Tunnel (no deploy):** run `python app.py` locally, then `cloudflared tunnel --url http://localhost:5000` and use the URL it prints. Only works while your machine is on.
+- **Railway / Fly.io:** same idea as Render — point at this repo, set `OPENAI_API_KEY`, use `gunicorn -b 0.0.0.0:$PORT app:app` as the start command.
+- **VPS:** `gunicorn -w 2 -b 0.0.0.0:5000 app:app` behind nginx + TLS.
 
 After the backend is up, update the WebView URL in `android/` to point at it and install the APK produced by the `build-apk` workflow.
 
